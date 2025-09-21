@@ -1,11 +1,9 @@
-// src/components/StudentDashboard.jsx
-
-import React, { useState, useEffect } from 'react';
+/import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../services/api'; // <-- Import our new API service
+import api from '../services/api';
 import './StudentDashboard.css';
 
-// This is the form component from your previous version, now separated
+// This is the form component
 const StudentInfoForm = ({ onFormSubmit }) => {
   const [formData, setFormData] = useState({
     address: '', phone: '',
@@ -14,6 +12,7 @@ const StudentInfoForm = ({ onFormSubmit }) => {
     branchChoice1: '', branchChoice2: '',
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,7 +26,9 @@ const StudentInfoForm = ({ onFormSubmit }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onFormSubmit(formData, setError);
+    setLoading(true);
+    // Pass the form's state and error setter to the parent
+    onFormSubmit(formData, setError).finally(() => setLoading(false));
   };
   
   return (
@@ -58,7 +59,7 @@ const StudentInfoForm = ({ onFormSubmit }) => {
           <input type="text" name="branchChoice1" placeholder="First Choice Branch" onChange={handleChange} required />
           <input type="text" name="branchChoice2" placeholder="Second Choice Branch" onChange={handleChange} required />
         </fieldset>
-        <button type="submit">Submit Information</button>
+        <button type="submit" disabled={loading}>{loading ? 'Submitting...' : 'Submit Information'}</button>
         {error && <p className="error">{error}</p>}
       </form>
     </div>
@@ -73,6 +74,7 @@ const StudentDashboard = () => {
 
   const fetchStatus = async () => {
     try {
+      setLoading(true);
       const response = await api.get('/api/students/status');
       setStatus(response.data);
     } catch (err) {
@@ -86,12 +88,31 @@ const StudentDashboard = () => {
     fetchStatus();
   }, []);
 
+  // ===============================================================
+  //               *** THIS IS THE CORRECTED FUNCTION ***
+  // ===============================================================
   const handleFormSubmit = async (formData, setFormError) => {
+    // 1. Create the correctly structured payload that the backend expects
+    const payload = {
+      personal: {
+        address: formData.address,
+        phone: formData.phone,
+      },
+      highSchool: formData.highSchool,
+      intermediate: formData.intermediate,
+      branchChoices: {
+        branchChoice1: formData.branchChoice1,
+        branchChoice2: formData.branchChoice2,
+      },
+    };
+
+    // 2. Send the new 'payload' object to the API
     try {
-      await api.post('/api/students/submit', formData);
+      await api.post('/api/students/submit', payload);
       alert('Information submitted successfully!');
       fetchStatus(); // Refresh status after submission
     } catch (err) {
+      // Use the error message from the backend, or a default one
       setFormError(err.response?.data?.message || 'Submission failed.');
     }
   };
@@ -108,6 +129,17 @@ const StudentDashboard = () => {
 
   if (loading) return <h2>Loading your dashboard...</h2>;
   if (error) return <h2 className="error">{error}</h2>;
+
+  if (status?.message === 'Seat has not been allocated yet.') {
+    return (
+        <div className="status-container">
+            <h2>Your Application Status</h2>
+            <div className="status-card">
+                <p>Your information has been received. Seat allocation is in progress. Please check back later.</p>
+            </div>
+        </div>
+    );
+  }
 
   // Conditional rendering based on the student's status
   if (!status || !status._id) {
@@ -140,9 +172,6 @@ const StudentDashboard = () => {
             <p>Your admission is confirmed! You can now download your offer letter.</p>
             <Link to="/offer-letter" className="offer-letter-btn">View Offer Letter</Link>
           </>
-        )}
-         {status.message && status.message === 'Seat has not been allocated yet.' && (
-            <p>Your information has been received. Seat allocation is in progress. Please check back later.</p>
         )}
       </div>
     </div>
