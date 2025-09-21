@@ -1,15 +1,75 @@
 // src/components/StudentDashboard.jsx
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import './StudentDashboard.css';
 
-// Form component remains the same
+// ===============================================================
+//               *** FORM SUB-COMPONENT ***
+// This component must be defined in the file before it is used.
+// ===============================================================
 const StudentInfoForm = ({ onFormSubmit }) => {
-  // ... (no changes to this component, keep it as is)
+  const [formData, setFormData] =useState({
+    address: '', phone: '',
+    highSchool: { maths: '', science: '', english: '', hindi: '' },
+    intermediate: { physics: '', chemistry: '', maths: '' },
+    branchChoice1: '', branchChoice2: '',
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleNestedChange = (section, e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [section]: { ...prev[section], [name]: value } }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    onFormSubmit(formData, setError).finally(() => setLoading(false));
+  };
+  
+  return (
+    <div className="form-container">
+      <h2>Student Information Form</h2>
+      <p>Fill out your details below to be considered for allocation.</p>
+      <form onSubmit={handleSubmit}>
+        <fieldset><legend>Personal Information</legend>
+          <input type="text" name="address" placeholder="Full Address" onChange={handleChange} required />
+          <input type="tel" name="phone" placeholder="Phone Number" onChange={handleChange} required />
+        </fieldset>
+        <fieldset><legend>10th Grade Marks</legend>
+          <input type="number" name="maths" placeholder="Maths" onChange={(e) => handleNestedChange('highSchool', e)} required />
+          <input type="number" name="science" placeholder="Science" onChange={(e) => handleNestedChange('highSchool', e)} required />
+          <input type="number" name="english" placeholder="English" onChange={(e) => handleNestedChange('highSchool', e)} required />
+          <input type="number" name="hindi" placeholder="Hindi" onChange={(e) => handleNestedChange('highSchool', e)} required />
+        </fieldset>
+        <fieldset><legend>12th Grade Marks (PCM)</legend>
+          <input type="number" name="physics" placeholder="Physics" onChange={(e) => handleNestedChange('intermediate', e)} required />
+          <input type="number" name="chemistry" placeholder="Chemistry" onChange={(e) => handleNestedChange('intermediate', e)} required />
+          <input type="number" name="maths" placeholder="Maths" onChange={(e) => handleNestedChange('intermediate', e)} required />
+        </fieldset>
+        <fieldset><legend>Branch Choices</legend>
+          <input type="text" name="branchChoice1" placeholder="First Choice Branch" onChange={handleChange} required />
+          <input type="text" name="branchChoice2" placeholder="Second Choice Branch" onChange={handleChange} required />
+        </fieldset>
+        <button type="submit" disabled={loading}>{loading ? 'Submitting...' : 'Submit Information'}</button>
+        {error && <p className="error">{error}</p>}
+      </form>
+    </div>
+  );
 };
 
-// This is the main dashboard component
+
+// ===============================================================
+//               *** MAIN DASHBOARD COMPONENT ***
+// ===============================================================
 const StudentDashboard = () => {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -57,19 +117,14 @@ const StudentDashboard = () => {
     }
   };
 
-  if (loading) return <h2>Loading your dashboard...</h2>;
-  if (error) return <h2 className="error">{error}</h2>;
+  if (loading) return <div className="dashboard-container"><h2>Loading your dashboard...</h2></div>;
+  if (error) return <div className="dashboard-container"><h2 className="error">{error}</h2></div>;
 
-  // ===============================================================
-  //               *** THIS IS THE CORRECTED LOGIC ***
-  // ===============================================================
-
-  // 1. Check if the user needs to submit the form
+  // Render logic based on the status from the API
   if (status?.message === 'Form not yet submitted') {
     return <StudentInfoForm onFormSubmit={handleFormSubmit} />;
   }
 
-  // 2. Check if they have submitted and are waiting for allocation
   if (status?.message === 'Seat has not been allocated yet.') {
     return (
         <div className="status-container">
@@ -81,7 +136,6 @@ const StudentDashboard = () => {
     );
   }
 
-  // 3. If they have an allotment, show its status
   if (status && status._id) {
     return (
       <div className="status-container">
@@ -96,22 +150,20 @@ const StudentDashboard = () => {
             </>
           )}
           {status.status === 'Accepted' && (
-            <><p>You have accepted your seat...</p><Link to="/payment" className="payment-btn">Proceed to Payment</Link></>
+            <><p>You have accepted your seat. Please submit your payment details to finalize your admission.</p><Link to="/payment" className="payment-btn">Proceed to Payment</Link></>
           )}
           {status.status === 'Payment Submitted' && (
-            <p>Your payment receipt is awaiting verification.</p>
+            <p>Your payment receipt is awaiting verification by the admin.</p>
           )}
           {status.status === 'Payment Verified' && (
-            <><p>Your admission is confirmed!</p><Link to="/offer-letter" className="offer-letter-btn">View Offer Letter</Link></>
+            <><p>Your admission is confirmed! You can now download your offer letter.</p><Link to="/offer-letter" className="offer-letter-btn">View Offer Letter</Link></>
           )}
         </div>
       </div>
     );
   }
 
-  // Fallback for any other state
-  return <div>Welcome to your dashboard.</div>;
+  return <div className="dashboard-container"><h2>Welcome to your dashboard.</h2></div>;
 };
+
 export default StudentDashboard;
-// You need to include the StudentInfoForm component definition here as well
-// Paste the full StudentInfoForm component code from the previous response here.
