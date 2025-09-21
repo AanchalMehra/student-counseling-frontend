@@ -1,0 +1,62 @@
+/* HomePage.css */
+
+.home-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(to bottom, #fff3e0, #ffe0b2); /* warm orange gradient */
+  text-align: center;
+  padding: 20px;
+}
+
+.home-title {
+  font-size: 3rem;
+  margin-bottom: 10px;
+  color: #e65100;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+}
+
+.home-subtitle {
+  font-size: 1.2rem;
+  margin-bottom: 40px;
+  color: #bf360c;
+}
+
+.home-button-container {
+  display: flex;
+  gap: 20px;
+}
+
+.home-button {
+  padding: 15px 30px;
+  font-size: 1rem;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  background: rgba(251, 140, 0, 0.8); /* semi-transparent orange */
+  backdrop-filter: blur(5px);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+}
+
+.home-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  opacity: 0.9;
+}
+
+.register-button {
+  background: rgba(255, 183, 77, 0.8); /* lighter semi-transparent orange */
+  backdrop-filter: blur(5px);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+}
+
+.register-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  opacity: 0.9;
+}
