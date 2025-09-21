@@ -1,5 +1,6 @@
 // Login.jsx
 import React, { useState } from "react";
+import { Link } from "react-router-dom"; // For navigation to register
 import "./LoginPage.css";
 
 const LoginPage = () => {
@@ -19,20 +20,23 @@ const LoginPage = () => {
     }
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       const data = await response.json();
 
       if (data.ok) {
         setMessage(data.message || "Login successful!");
         setError("");
-        // You can store user info in localStorage if needed
+        // Store user info or token in localStorage
         localStorage.setItem("user", JSON.stringify(data));
       } else {
         setError(data.message || "Email or password is incorrect");
@@ -65,6 +69,9 @@ const LoginPage = () => {
       </form>
       {message && <p className="success">{message}</p>}
       {error && <p className="error">{error}</p>}
+      <p className="register-link">
+        Don't have an account? <Link to="/register">Register here</Link>
+      </p>
     </div>
   );
 };
