@@ -91,21 +91,23 @@ const StudentDashboard = () => {
     fetchStatus();
   }, []);
 
+ // In src/components/StudentDashboard.jsx
+
+// ... inside the StudentDashboard component
+
   const handleFormSubmit = async (formData, setFormError) => {
-    const payload = {
-      personal: { address: formData.address, phone: formData.phone },
-      highSchool: formData.highSchool,
-      intermediate: formData.intermediate,
-      branchChoices: { branchChoice1: formData.branchChoice1, branchChoice2: formData.branchChoice2 },
-    };
+    // The formData state is already in the correct flat structure.
+    // We can send it directly to the API without creating a 'payload' object.
     try {
-      await api.post('/api/students/submit', payload);
+      await api.post('/api/students/submit', formData); // <-- Send formData directly
       alert('Information submitted successfully!');
-      fetchStatus();
+      fetchStatus(); // Refresh status after submission
     } catch (err) {
+      // Use the error message from the backend, or a default one
       setFormError(err.response?.data?.message || 'Submission failed.');
     }
   };
+
 
   const handleAccept = async () => {
     try {
