@@ -112,6 +112,6 @@ const StudentDashboard = () => {
   // Fallback for any other state
   return <div>Welcome to your dashboard.</div>;
 };
-
+export default StudentDashboard;
 // You need to include the StudentInfoForm component definition here as well
 // Paste the full StudentInfoForm component code from the previous response here.
