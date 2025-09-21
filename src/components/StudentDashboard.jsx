@@ -69,7 +69,7 @@ const StudentDashboard = () => {
 
     try {
       setLoading(true);
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/student/update`, {
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/students/update`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
