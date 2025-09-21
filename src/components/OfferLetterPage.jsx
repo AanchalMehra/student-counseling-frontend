@@ -5,7 +5,7 @@ export default function OfferLetterPage({ user }) {
   const [allocatedBranch, setAllocatedBranch] = useState('');
 
   useEffect(() => {
-    axios.get(`http://https://student-counseling-backend.onrender.com/api/students/${user._id}/offer`)
+    axios.get(`${process.env.REACT_APP_BACKEND_URL}/${user._id}/offer`)
       .then(res => setAllocatedBranch(res.data.branch))
       .catch(err => console.log('Error fetching offer letter'));
   }, [user]);

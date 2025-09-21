@@ -17,7 +17,7 @@ const StudentDashboard = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const res = await fetch("https://https://student-counseling-backend.onrender.com/student"); // Replace with your API
+        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}`); // Replace with your API
         if (!res.ok) throw new Error("Failed to fetch student data");
         const data = await res.json();
         setStudentData(data);
@@ -69,7 +69,7 @@ const StudentDashboard = () => {
 
     try {
       setLoading(true);
-      const res = await fetch("https://your-backend-api.com/student/update", {
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/student/update`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

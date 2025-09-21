@@ -19,7 +19,7 @@ const LoginPage = () => {
     }
 
     try {
-      const response = await fetch("https://https://student-counseling-backend.onrender.com/login", {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

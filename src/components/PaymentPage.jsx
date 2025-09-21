@@ -9,7 +9,7 @@ export default function PaymentPage({ navigateTo }) {
     const formData = new FormData();
     formData.append('receipt', receipt);
 
-    axios.post('http://https://student-counseling-backend.onrender.com/api/students/payment', formData)
+    axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/students/payment`, formData)
       .then(res => {
         alert('Payment submitted!');
         navigateTo('offerLetter');

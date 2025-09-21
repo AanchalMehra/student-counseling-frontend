@@ -5,7 +5,7 @@ export default function AdminDashboard() {
   const [students, setStudents] = useState([]);
 
   useEffect(() => {
-    axios.get('http://https://student-counseling-backend.onrender.com/api/admin/students')
+    axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/admin/students`)
       .then(res => setStudents(res.data))
       .catch(err => console.log('Error fetching students'));
   }, []);
@@ -18,7 +18,7 @@ export default function AdminDashboard() {
   });
 
   const handleAllocateBranch = (student, branch) => {
-    axios.post(`http://localhost:5000/api/admin/allocate`, { studentId: student._id, branch })
+    axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/admin/allocate`, { studentId: student._id, branch })
       .then(res => {
         alert(`Branch ${branch} allocated to ${student.name}`);
         setStudents(students.map(s => s._id === student._id ? {...s, allocatedBranch: branch} : s));
