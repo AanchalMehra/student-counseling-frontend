@@ -1,6 +1,5 @@
-// Login.jsx
 import React, { useState } from "react";
-import { Link } from "react-router-dom"; // For navigation to register
+import { Link, useNavigate } from "react-router-dom";
 import "./LoginPage.css";
 
 const LoginPage = () => {
@@ -8,14 +7,15 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setMessage("");
 
-    // Frontend validation
     if (!email || !password) {
       setError("Please fill in all fields");
-      setMessage("");
       return;
     }
 
@@ -33,18 +33,25 @@ const LoginPage = () => {
 
       const data = await response.json();
 
-      if (data.ok) {
-        setMessage(data.message || "Login successful!");
-        setError("");
-        // Store user info or token in localStorage
+      // **CRITICAL FIX: Check response.ok, not data.ok**
+      if (response.ok) {
+        setMessage("Login successful! Redirecting...");
         localStorage.setItem("user", JSON.stringify(data));
+
+        // Redirect after a short delay
+        setTimeout(() => {
+          if (data.isAdmin) {
+            navigate("/admin-dashboard");
+          } else {
+            navigate("/student-dashboard");
+          }
+        }, 1500);
+
       } else {
         setError(data.message || "Email or password is incorrect");
-        setMessage("");
       }
     } catch (err) {
-      setError("Failed to connect to server");
-      setMessage("");
+      setError("Failed to connect to the server. Please try again later.");
       console.error(err);
     }
   };

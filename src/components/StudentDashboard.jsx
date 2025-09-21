@@ -1,129 +1,150 @@
-import React, { useState, useEffect } from "react";
-import "./StudentDashboard.css";
+// src/components/StudentDashboard.jsx
 
-const StudentDashboard = () => {
-  const [studentData, setStudentData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    branch: "",
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import api from '../services/api'; // <-- Import our new API service
+import './StudentDashboard.css';
+
+// This is the form component from your previous version, now separated
+const StudentInfoForm = ({ onFormSubmit }) => {
+  const [formData, setFormData] = useState({
+    address: '', phone: '',
+    highSchool: { maths: '', science: '', english: '', hindi: '' },
+    intermediate: { physics: '', chemistry: '', maths: '' },
+    branchChoice1: '', branchChoice2: '',
   });
+  const [error, setError] = useState('');
 
-  const [message, setMessage] = useState(""); // For success/error messages
-  const [loading, setLoading] = useState(false);
-
-  // Fetch student data on component mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}`); // Replace with your API
-        if (!res.ok) throw new Error("Failed to fetch student data");
-        const data = await res.json();
-        setStudentData(data);
-      } catch (err) {
-        setMessage(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    // Prevent comma in branch field
-    if (name === "branch" && value.includes(",")) return;
-
-    setStudentData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Validate inputs
-  const validateInputs = () => {
-    const { name, email, password, branch } = studentData;
-    if (!name || !email || !password || !branch) {
-      setMessage("Please fill all fields");
-      return false;
-    }
-    if (!email.includes("@")) {
-      setMessage("Enter a valid email");
-      return false;
-    }
-    if (password.length < 6) {
-      setMessage("Password must be at least 6 characters");
-      return false;
-    }
-    return true;
+  const handleNestedChange = (section, e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [section]: { ...prev[section], [name]: value } }));
   };
 
-  // Handle form submit
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (!validateInputs()) return;
+    onFormSubmit(formData, setError);
+  };
+  
+  return (
+    <div className="form-container">
+      <h2>Student Information Form</h2>
+      <p>Fill out your details below to be considered for allocation.</p>
+      <form onSubmit={handleSubmit}>
+        <fieldset>
+          <legend>Personal Information</legend>
+          <input type="text" name="address" placeholder="Full Address" onChange={handleChange} required />
+          <input type="tel" name="phone" placeholder="Phone Number" onChange={handleChange} required />
+        </fieldset>
+        <fieldset>
+          <legend>10th Grade Marks</legend>
+          <input type="number" name="maths" placeholder="Maths" onChange={(e) => handleNestedChange('highSchool', e)} required />
+          <input type="number" name="science" placeholder="Science" onChange={(e) => handleNestedChange('highSchool', e)} required />
+          <input type="number" name="english" placeholder="English" onChange={(e) => handleNestedChange('highSchool', e)} required />
+          <input type="number" name="hindi" placeholder="Hindi" onChange={(e) => handleNestedChange('highSchool', e)} required />
+        </fieldset>
+        <fieldset>
+          <legend>12th Grade Marks (PCM)</legend>
+          <input type="number" name="physics" placeholder="Physics" onChange={(e) => handleNestedChange('intermediate', e)} required />
+          <input type="number" name="chemistry" placeholder="Chemistry" onChange={(e) => handleNestedChange('intermediate', e)} required />
+          <input type="number" name="maths" placeholder="Maths" onChange={(e) => handleNestedChange('intermediate', e)} required />
+        </fieldset>
+        <fieldset>
+          <legend>Branch Choices</legend>
+          <input type="text" name="branchChoice1" placeholder="First Choice Branch" onChange={handleChange} required />
+          <input type="text" name="branchChoice2" placeholder="Second Choice Branch" onChange={handleChange} required />
+        </fieldset>
+        <button type="submit">Submit Information</button>
+        {error && <p className="error">{error}</p>}
+      </form>
+    </div>
+  );
+};
 
+// This is the main dashboard component
+const StudentDashboard = () => {
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchStatus = async () => {
     try {
-      setLoading(true);
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/students/update`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(studentData),
-      });
-
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Failed to update");
-
-      setMessage("Profile updated successfully!");
+      const response = await api.get('/api/students/status');
+      setStatus(response.data);
     } catch (err) {
-      setMessage(err.message);
+      setError('Could not fetch your status.');
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchStatus();
+  }, []);
+
+  const handleFormSubmit = async (formData, setFormError) => {
+    try {
+      await api.post('/api/students/submit', formData);
+      alert('Information submitted successfully!');
+      fetchStatus(); // Refresh status after submission
+    } catch (err) {
+      setFormError(err.response?.data?.message || 'Submission failed.');
+    }
+  };
+
+  const handleAccept = async () => {
+    try {
+      await api.post('/api/students/accept');
+      alert('Seat accepted! Please proceed to payment.');
+      fetchStatus(); // Refresh status to show 'Accepted'
+    } catch (err) {
+      alert('Failed to accept the seat.');
+    }
+  };
+
+  if (loading) return <h2>Loading your dashboard...</h2>;
+  if (error) return <h2 className="error">{error}</h2>;
+
+  // Conditional rendering based on the student's status
+  if (!status || !status._id) {
+    return <StudentInfoForm onFormSubmit={handleFormSubmit} />;
+  }
+
   return (
-    <div className="dashboard-container">
-      <h2>Student Dashboard</h2>
-      {loading && <p>Loading...</p>}
-      {message && <p className="message">{message}</p>}
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="name"
-          value={studentData.name}
-          placeholder="Name"
-          onChange={handleChange}
-        />
-        <input
-          type="email"
-          name="email"
-          value={studentData.email}
-          placeholder="Email"
-          onChange={handleChange}
-        />
-        <input
-          type="password"
-          name="password"
-          value={studentData.password}
-          placeholder="Password"
-          onChange={handleChange}
-        />
-        <input
-          type="text"
-          name="branch"
-          value={studentData.branch}
-          placeholder="Branch (no commas allowed)"
-          onChange={handleChange}
-        />
-        <button type="submit">Update Profile</button>
-      </form>
+    <div className="status-container">
+      <h2>Your Application Status</h2>
+      <div className="status-card">
+        <h3>Current Status: <span>{status.status}</span></h3>
+        {status.status === 'Allocated' && (
+          <>
+            <p>Congratulations! You have been allocated the following branch:</p>
+            <p className="branch-name">{status.allocatedBranch}</p>
+            <button className="accept-btn" onClick={handleAccept}>Accept Seat</button>
+          </>
+        )}
+        {status.status === 'Accepted' && (
+          <>
+            <p>You have accepted your seat. Please submit your payment details to finalize your admission.</p>
+            <Link to="/payment" className="payment-btn">Proceed to Payment</Link>
+          </>
+        )}
+        {status.status === 'Payment Submitted' && (
+          <p>Your payment receipt has been submitted and is awaiting verification from the admin.</p>
+        )}
+        {status.status === 'Payment Verified' && (
+          <>
+            <p>Your admission is confirmed! You can now download your offer letter.</p>
+            <Link to="/offer-letter" className="offer-letter-btn">View Offer Letter</Link>
+          </>
+        )}
+         {status.message && status.message === 'Seat has not been allocated yet.' && (
+            <p>Your information has been received. Seat allocation is in progress. Please check back later.</p>
+        )}
+      </div>
     </div>
   );
 };

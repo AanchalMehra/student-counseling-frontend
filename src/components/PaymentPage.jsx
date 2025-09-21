@@ -1,29 +1,62 @@
+// src/components/PaymentPage.jsx
+
 import React, { useState } from 'react';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import api from '../services/api'; // <-- Import our new API service
+import './PaymentPage.css';
 
-export default function PaymentPage({ navigateTo }) {
-  const [receipt, setReceipt] = useState(null);
+const PaymentPage = () => {
+  const [transactionId, setTransactionId] = useState('');
+  const [receiptUrl, setReceiptUrl] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append('receipt', receipt);
+    if (!transactionId || !receiptUrl) {
+      setError('Please provide both a transaction ID and a receipt URL.');
+      return;
+    }
+    setError('');
 
-    axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/students/payment`, formData)
-      .then(res => {
-        alert('Payment submitted!');
-        navigateTo('offerLetter');
-      })
-      .catch(err => alert('Error submitting payment'));
-  }
+    try {
+      await api.post('/api/students/payment', {
+        transactionId,
+        receiptUrl,
+      });
+      alert('Payment details submitted successfully! You will be notified once the admin verifies it.');
+      navigate('/student-dashboard'); // Go back to the dashboard to see the updated status
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to submit payment details.');
+    }
+  };
 
   return (
-    <div className="form-container">
-      <h1>Payment</h1>
-      <form onSubmit={handleSubmit} className="form">
-        <input type="file" onChange={e=>setReceipt(e.target.files[0])} className="input-field"/>
-        <button type="submit" className="submit-button">Submit Payment</button>
+    <div className="payment-container">
+      <form onSubmit={handleSubmit} className="payment-form">
+        <h2>Submit Payment Details</h2>
+        <p>
+          After paying the fees, please enter the transaction ID and a link to your payment receipt (e.g., a Google Drive or Imgur link).
+        </p>
+        <input
+          type="text"
+          placeholder="Transaction ID"
+          value={transactionId}
+          onChange={(e) => setTransactionId(e.target.value)}
+          required
+        />
+        <input
+          type="url"
+          placeholder="URL to your payment receipt"
+          value={receiptUrl}
+          onChange={(e) => setReceiptUrl(e.target.value)}
+          required
+        />
+        <button type="submit">Submit Payment</button>
+        {error && <p className="error">{error}</p>}
       </form>
     </div>
   );
-}
+};
+
+export default PaymentPage;

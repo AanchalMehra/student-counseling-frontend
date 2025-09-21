@@ -1,48 +1,104 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+// src/components/AdminDashboard.jsx
 
-export default function AdminDashboard() {
+import React, { useState, useEffect } from 'react';
+import api from '../services/api'; // <-- Import our new API service
+import './AdminDashboard.css';
+
+const AdminDashboard = () => {
   const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchStudents = async () => {
+    try {
+      // Use the correct route '/api/admin/all'
+      const response = await api.get('/api/admin/all');
+      setStudents(response.data);
+    } catch (err) {
+      setError('Failed to fetch student data. Please check your connection or login again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/admin/students`)
-      .then(res => setStudents(res.data))
-      .catch(err => console.log('Error fetching students'));
+    fetchStudents();
   }, []);
 
-  // Calculate total 10+2 marks and sort
-  const sortedStudents = [...students].sort((a,b) => {
-    const totalA = (parseInt(a.marks12?.physics||0) + parseInt(a.marks12?.chemistry||0) + parseInt(a.marks12?.math12||0));
-    const totalB = (parseInt(b.marks12?.physics||0) + parseInt(b.marks12?.chemistry||0) + parseInt(b.marks12?.math12||0));
-    return totalB - totalA;
-  });
+  const handleAllocate = async (userId, branch) => {
+    if (!branch) {
+      alert('This student did not select a second branch choice.');
+      return;
+    }
+    try {
+      await api.post('/api/admin/allocate', { userId, allocatedBranch: branch });
+      alert(`Successfully allocated ${branch} to the student.`);
+      fetchStudents(); // Refresh the list to show the new status
+    } catch (err) {
+      alert('Error allocating seat. The student may already have an allocation.');
+      console.error(err);
+    }
+  };
 
-  const handleAllocateBranch = (student, branch) => {
-    axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/admin/allocate`, { studentId: student._id, branch })
-      .then(res => {
-        alert(`Branch ${branch} allocated to ${student.name}`);
-        setStudents(students.map(s => s._id === student._id ? {...s, allocatedBranch: branch} : s));
-      })
-      .catch(err => alert('Error allocating branch'));
-  }
+  const handleVerifyPayment = async (allotmentId) => {
+    try {
+      await api.post('/api/admin/verify-payment', { allotmentId });
+      alert('Payment verified successfully!');
+      fetchStudents(); // Refresh the list
+    } catch (err) {
+      alert('Error verifying payment.');
+      console.error(err);
+    }
+  };
+
+  if (loading) return <div className="dashboard-container"><h2>Loading students...</h2></div>;
+  if (error) return <div className="dashboard-container"><h2 className="error">{error}</h2></div>;
 
   return (
-    <div className="form-container">
+    <div className="dashboard-container">
       <h1>Admin Dashboard</h1>
       <table>
         <thead>
-          <tr><th>Name</th><th>Total 10+2</th><th>Branch Choice 1</th><th>Branch Choice 2</th><th>Allocate Branch</th></tr>
+          <tr>
+            <th>Rank</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>12th Total</th>
+            <th>Choice 1</th>
+            <th>Choice 2</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
         </thead>
         <tbody>
-          {sortedStudents.map((s,i)=>(
-            <tr key={i}>
-              <td>{s.name}</td>
-              <td>{(parseInt(s.marks12?.physics||0) + parseInt(s.marks12?.chemistry||0) + parseInt(s.marks12?.math12||0))}</td>
-              <td>{s.branchChoices?.branch1}</td>
-              <td>{s.branchChoices?.branch2}</td>
+          {students.map((student, index) => (
+            <tr key={student._id}>
+              <td>{index + 1}</td>
+              <td>{student.user.name}</td>
+              <td>{student.user.email}</td>
+              <td>{student.intermediate.total}</td>
+              <td>{student.branchChoice1}</td>
+              <td>{student.branchChoice2}</td>
+              <td className={`status-${student.allotment?.status?.replace(/\s+/g, '-').toLowerCase()}`}>
+                {student.allotment?.status || 'Not Allocated'}
+              </td>
               <td>
-                <button onClick={()=>handleAllocateBranch(s, s.branchChoices.branch1)}>Allocate 1</button>
-                <button onClick={()=>handleAllocateBranch(s, s.branchChoices.branch2)}>Allocate 2</button>
+                {(!student.allotment || student.allotment.status === 'Pending') && (
+                  <div className="action-buttons">
+                    <button onClick={() => handleAllocate(student.user._id, student.branchChoice1)}>
+                      Allocate Choice 1
+                    </button>
+                    <button onClick={() => handleAllocate(student.user._id, student.branchChoice2)}>
+                      Allocate Choice 2
+                    </button>
+                  </div>
+                )}
+                {student.allotment?.status === 'Payment Submitted' && (
+                  <button className="verify-btn" onClick={() => handleVerifyPayment(student.allotment._id)}>
+                    Verify Payment
+                  </button>
+                )}
               </td>
             </tr>
           ))}
@@ -50,4 +106,6 @@ export default function AdminDashboard() {
       </table>
     </div>
   );
-}
+};
+
+export default AdminDashboard;
